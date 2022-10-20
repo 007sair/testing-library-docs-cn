@@ -1,0 +1,133 @@
+---
+id: pointer
+title: Pointer
+---
+
+```ts
+pointer(input: PointerInput): Promise<void>
+```
+
+The `pointer` API allows to simulate interactions with pointer devices. It accepts a single pointer action or an array of them.
+
+```ts
+type PointerInput = PointerActionInput | Array<PointerActionInput>
+```
+
+> Our primary target audience tests per `jest` in a `jsdom` environment and there is no layout in `jsdom`. This means that different from your browser the elements don't exist in a specific position, layer and size.  
+> We don't try to determine if the pointer action you describe is possible at that position in your layout.
+
+## Pointer action
+
+There are two types of actions: press and move.
+
+### <a name="press" href="#">Pressing a button or touching the screen</h3> 
+
+<p spaces-before="0">
+  A pointer action is a press action if it defines a key to be pressed, to be released, or both.
+</p>
+
+<pre><code class="js">pointer({keys: '[MouseLeft]'})
+</code></pre>
+
+<p spaces-before="0">
+  You can declare multiple press actions (on the same position) at once which will be resolved to multiple actions internally. If you don't need to declare any other properties you can also just supply the <code>keys</code> string.
+</p>
+
+<pre><code class="js">pointer({keys: '[MouseLeft][MouseRight]'})
+// or
+pointer('[MouseLeft][MouseRight]')
+</code></pre>
+
+<p spaces-before="0">
+  In order to press a button without releasing it, the button name is suffixed with <code>&gt;</code>.<br x-id="2" /> For just releasing a previously pressed button, the tag is started with <code>/</code>.
+</p>
+
+<pre><code class="js">pointer('[MouseLeft&gt;]') // press the left mouse button
+pointer('[/MouseLeft]') // release the left mouse button
+</code></pre>
+
+<p spaces-before="0">
+  Which buttons are available depends on the <a href="options.mdx#pointermap"><code>pointerMap</code></a>.
+</p>
+
+<h3 spaces-before="0">
+  <a name="move" href="#">Moving a pointer</h3> 
+  
+  <p spaces-before="0">
+    Every pointer action that is not a press action describes a pointer movement.
+  </p>
+  
+  <p spaces-before="0">
+    You can declare which pointer is moved per <code>pointerName</code> property. This defaults to <code>mouse</code>.
+  </p>
+  
+  <p spaces-before="0">
+    Note that the <code>mouse</code> pointer (<code>pointerId: 1</code>) is also the only pointer that always exists and has a position. A <code>touch</code> pointer only exists while the screen is touched and receives a new <code>pointerId</code> every time. For these pointers, we use the "button" name from the press action as <code>pointerName</code>.
+  </p>
+  
+  <pre><code class="js">pointer([
+  // touch the screen at element1
+  {keys: '[TouchA&gt;]', target: element1},
+  // move the touch pointer to element2
+  {pointerName: 'TouchA', target: element2},
+  // release the touch pointer at the last position (element2)
+  {keys: '[/TouchA]'},
+])
+</code></pre>
+
+<h2 spaces-before="0">
+  Pointer position
+</h2>
+
+<h3 spaces-before="0">
+  PointerTarget
+</h3>
+
+<pre><code class="ts">interface PointerTarget {
+  target: Element
+  coords?: PointerCoords
+}
+</code></pre>
+
+<p spaces-before="0">
+  The <code>PointerTarget</code> props allows to describe the position of the pointer on the document.<br x-id="2" /> The <code>coords</code> you provide are applied as-is to the resulting <a href="https://developer.mozilla.org/en-US/docs/Web/API/MouseEvent"><code>MouseEvent</code></a> and can be omitted.<br x-id="2" /> The <code>target</code> should be the element receiving the pointer input in the browser. This is the topmost element that can receive pointer event at those coordinates.
+</p>
+
+<h3 spaces-before="0">
+  SelectionTarget
+</h3>
+
+<pre><code class="ts">interface SelectionTarget {
+  node?: Node
+  offset?: number
+}
+</code></pre>
+
+<p spaces-before="0">
+  Pointer actions can alter the selection in the document.<br x-id="2" /> In the browser every pointer position corresponds with a DOM position. This is a DOM node and a DOM offset which usually translates to the character closest to the pointer position.<br x-id="2" /> As all character in a no-layout environment are in the same layout position we assume a pointer position to be closest to the last descendant of the pointer <code>target</code>.
+</p>
+
+<p spaces-before="0">
+  If you provide <code>offset</code>, we assume the pointer position to be closest to the <code>offset-th</code> character of <code>target.textContent</code>.
+</p>
+
+<p spaces-before="0">
+  If you also provide <code>node</code>, we treat <code>node</code> and <code>offset</code> as the exact DOM position to be used for any selection.
+</p>
+
+<pre><code class="jsx">// element: &lt;div&gt;&lt;span&gt;foo&lt;/span&gt;&lt;span&gt;bar&lt;/span&gt;&lt;/div&gt;
+// | marking the cursor.
+// [ ] marking a selection.
+
+pointer({target: element, offset: 2, keys: '[MouseLeft]'})
+// =&gt; &lt;div&gt;&lt;span&gt;fo|o&lt;/span&gt;&lt;span&gt;bar&lt;/span&gt;&lt;/div&gt;
+
+pointer([
+  {target: element, offset: 2, keys: '[MouseLeft&gt;]'},
+  {offset: 5},
+])
+// =&gt; &lt;div&gt;&lt;span&gt;fo[o&lt;/span&gt;&lt;span&gt;ba]r&lt;/span&gt;&lt;/div&gt;
+
+pointer({target: element, node: element, offset: 1, keys: '[MouseLeft]'})
+// =&gt; &lt;div&gt;&lt;span&gt;foo&lt;/span&gt;|&lt;span&gt;bar&lt;/span&gt;&lt;/div&gt;
+</code></pre>
