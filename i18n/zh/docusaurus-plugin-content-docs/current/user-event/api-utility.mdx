@@ -1,0 +1,211 @@
+---
+id: utility
+title: Utility APIs
+---
+
+The following APIs don't have one-to-one equivalents in a real user interaction.  
+Their behavior is therefore an interpretation how the "perceived" user interaction might be translated to actual events on the DOM.
+
+## clear()
+
+```ts
+clear(element: Element): Promise<void>
+```
+
+This API can be used to easily clear an editable element.
+
+1. Focus element
+1. Select all contents as per browser menu
+1. Delete contents as per browser menu
+
+```jsx
+test('clear', async () => {
+  render(<textarea defaultValue="Hello, World!" />)
+
+  await userEvent.clear(screen.getByRole('textbox'))
+
+  expect(screen.getByRole('textbox')).toHaveValue('')
+})
+```
+
+The `Promise` is rejected if the element can not be focused or contents can not be selected.
+
+## <a name="selectoptions"><a name="deselectoptions"> selectOptions(), deselectOptions()</h2> 
+
+<pre><code class="ts">selectOptions(
+    element: Element,
+    values: HTMLElement | HTMLElement[] | string[] | string,
+): Promise&lt;void&gt;
+deselectOptions(
+    element: Element,
+    values: HTMLElement | HTMLElement[] | string[] | string,
+): Promise&lt;void&gt;
+</code></pre>
+
+<p spaces-before="0">
+  Select/deselect the given options in an <a href="https://developer.mozilla.org/en-US/docs/Web/API/HTMLSelectElement">HTMLSelectElement</a> or <a href="https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Roles/listbox_role">listbox</a>.
+</p>
+
+<p spaces-before="0">
+  The <code>values</code> parameter can refer to an option per its value, HTML content or just provide the element. It also accepts an array of these.
+</p>
+
+<blockquote spaces-before="0">
+  <p spaces-before="0">
+    Selecting multiple options and/or deselecting options of <code>HTMLSelectElement</code> is only possible if <a href="https://developer.mozilla.org/en-US/docs/Web/HTML/Element/select#attr-multiple">multiple</a> is specified.
+  </p>
+</blockquote>
+
+<pre><code class="jsx">test('selectOptions', async () =&gt; {
+  render(
+    &lt;select multiple&gt;
+      &lt;option value="1"&gt;A&lt;/option&gt;
+      &lt;option value="2"&gt;B&lt;/option&gt;
+      &lt;option value="3"&gt;C&lt;/option&gt;
+    &lt;/select&gt;,
+  )
+
+  await userEvent.selectOptions(screen.getByRole('listbox'), ['1', 'C'])
+
+  expect(screen.getByRole('option', {name: 'A'}).selected).toBe(true)
+  expect(screen.getByRole('option', {name: 'B'}).selected).toBe(false)
+  expect(screen.getByRole('option', {name: 'C'}).selected).toBe(true)
+})
+</code></pre>
+
+<pre><code class="jsx">test('deselectOptions', async () =&gt; {
+  render(
+    &lt;select multiple&gt;
+      &lt;option value="1"&gt;A&lt;/option&gt;
+      &lt;option value="2" selected&gt;
+        B
+      &lt;/option&gt;
+      &lt;option value="3"&gt;C&lt;/option&gt;
+    &lt;/select&gt;,
+  )
+
+  await userEvent.deselectOptions(screen.getByRole('listbox'), '2')
+
+  expect(screen.getByText('B').selected).toBe(false)
+})
+</code></pre>
+
+<p spaces-before="0">
+  Note that this API triggers pointer events and is therefore subject to <a href="options.mdx#pointereventscheck">pointerEventsCheck</a>.
+</p>
+
+<h2 spaces-before="0">
+  type()
+</h2>
+
+<pre><code class="ts">type(
+    element: Element,
+    text: KeyboardInput,
+    options?: {
+        skipClick?: boolean
+        skipAutoClose?: boolean
+        initialSelectionStart?: number
+        initialSelectionEnd?: number
+    }
+): Promise&lt;void&gt;
+</code></pre>
+
+<p spaces-before="0">
+  Type into an input element.
+</p>
+
+<blockquote spaces-before="0">
+  <p spaces-before="0">
+    You should use <a href="api-keyboard.mdx"><code>keyboard()</code></a> if you want to just simulate pressing buttons on the keyboard.<br x-id="2" /> You can use <code>type()</code> if you just want to conveniently insert some text into an input field or textarea.
+  </p>
+</blockquote>
+
+<ol start="1">
+  <li>
+    Unless <a href="options.mdx#skipclick"><code>skipClick</code></a> is <code>true</code>, click the element.
+  </li>
+  
+  <li>
+    <p spaces-before="0">
+      If <code>initialSelectionStart</code> is set, set the selection on the element. If <code>initialSelectionEnd</code> is not set, this results in a collapsed selection.
+    </p>
+  </li>
+  
+  <li>
+    <p spaces-before="0">
+      Type the given <code>text</code> per <a href="api-keyboard.mdx"><code>keyboard()</code></a>.
+    </p>
+  </li>
+  
+  <li>
+    Unless <a href="options.mdx#skipautoclose"><code>skipAutoClose</code></a> is <code>true</code>, release all pressed keys.
+  </li>
+</ol>
+
+<pre><code class="jsx">test('type into an input field', async () =&gt; {
+  render(&lt;input defaultValue="Hello,"/&gt;)
+  const input = screen.getByRole('textbox')
+
+  await userEvent.type(input, ' World!')
+
+  expect(input).toHaveValue('Hello, World!')
+})
+</code></pre>
+
+<h2 spaces-before="0">
+  upload()
+</h2>
+
+<pre><code class="ts">upload(
+    element: HTMLElement,
+    fileOrFiles: File | File[],
+): Promise&lt;void&gt;
+</code></pre>
+
+<p spaces-before="0">
+  Change a file input as if a user clicked it and selected files in the resulting file upload dialog.
+</p>
+
+<blockquote spaces-before="0">
+  <p spaces-before="0">
+    Files that don't match an <code>accept</code> property will be automatically discarded, unless <a href="options.mdx#applyaccept"><code>applyAccept</code></a> is set to <code>false</code>.
+  </p>
+</blockquote>
+
+<pre><code class="jsx">test('upload file', async () =&gt; {
+  render(
+    &lt;div&gt;
+      &lt;label htmlFor="file-uploader"&gt;Upload file:&lt;/label&gt;
+      &lt;input id="file-uploader" type="file" /&gt;
+    &lt;/div&gt;,
+  )
+  const file = new File(['hello'], 'hello.png', {type: 'image/png'})
+  const input = screen.getByLabelText(/upload file/i)
+
+  await userEvent.upload(input, file)
+
+  expect(input.files[0]).toBe(file)
+  expect(input.files.item(0)).toBe(file)
+  expect(input.files).toHaveLength(1)
+})
+
+test('upload multiple files', async () =&gt; {
+  render(
+    &lt;div&gt;
+      &lt;label htmlFor="file-uploader"&gt;Upload file:&lt;/label&gt;
+      &lt;input id="file-uploader" type="file" multiple /&gt;
+    &lt;/div&gt;,
+  )
+  const files = [
+    new File(['hello'], 'hello.png', {type: 'image/png'}),
+    new File(['there'], 'there.png', {type: 'image/png'}),
+  ]
+  const input = screen.getByLabelText(/upload file/i)
+
+  await userEvent.upload(input, files)
+
+  expect(input.files).toHaveLength(2)
+  expect(input.files[0]).toBe(files[0])
+  expect(input.files[1]).toBe(files[1])
+})
+</code></pre>
