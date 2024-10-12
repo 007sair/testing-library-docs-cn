@@ -5,7 +5,7 @@
   "private": true,
   "scripts": {
     "examples": "docusaurus-examples",
-    "start": "docusaurus start",
+    "start": "docusaurus start --locale zh-Hans",
     "build": "docusaurus build",
     "serve": "docusaurus serve",
     "write-translations": "docusaurus write-translations",

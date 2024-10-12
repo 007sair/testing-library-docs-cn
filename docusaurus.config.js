@@ -213,7 +213,7 @@ module.exports = {
           showLastUpdateAuthor: true,
           showLastUpdateTime: true,
           remarkPlugins: [
-            [require('@docusaurus/remark-plugin-npm2yarn'), { sync: true }],
+            [require('@docusaurus/remark-plugin-npm2yarn'), {sync: true}],
           ],
           editLocalizedFiles: true,
           editUrl:
@@ -233,7 +233,7 @@ module.exports = {
         },
         gtag: {
           trackingID: 'UA-137787095-1',
-        }
+        },
       },
     ],
   ],
@@ -341,7 +341,7 @@ module.exports = {
             },
             {
               label: 'Edit Docs on GitHub',
-              href: 'https://github.com/testing-library/testing-library-docs',
+              href: 'https://github.com/007sair/testing-library-docs-cn',
             },
             {
               label: 'Hosted by Netlify',
@@ -363,6 +363,6 @@ module.exports = {
   },
   i18n: {
     defaultLocale: 'en',
-    locales: ['en', 'zh-Hans']
-  }
+    locales: ['en', 'zh-Hans'],
+  },
 }
